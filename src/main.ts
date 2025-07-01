@@ -41,7 +41,11 @@ async function bootstrap() {
     const document = SwaggerModule.createDocument(app, config);
 
     // 6. Configura la ruta donde se servirá la UI de Swagger
-    SwaggerModule.setup('api-docs', app, document);
+    SwaggerModule.setup('api-docs', app, document, {
+      swaggerOptions: {
+        docExpansion: 'none', // 'list'
+      },
+    });
   }
 
   await app.listen(process.env.PORT ?? 3000);

@@ -30,7 +30,7 @@ services:
       retries: 5
       start_period: 10s
 
-    # Tus optimizaciones de rendimiento (que están muy bien)
+    # Tus optimizaciones de rendimiento
     shm_size: 1gb
     mem_limit: 1g
     command: postgres

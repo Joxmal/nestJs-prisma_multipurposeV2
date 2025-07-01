@@ -88,8 +88,56 @@ async function main() {
     manageProductsPermission,
   });
 
+  // Nuevos permisos para artículos
+  const createArticlePermission = await prisma.permission.upsert({
+    where: { action_subject: { action: 'create', subject: 'Article' } },
+    update: {},
+    create: {
+      action: 'create',
+      subject: 'Article',
+      description: 'Permite crear artículos',
+    },
+  });
+
+  const readArticlePermission = await prisma.permission.upsert({
+    where: { action_subject: { action: 'read', subject: 'Article' } },
+    update: {},
+    create: {
+      action: 'read',
+      subject: 'Article',
+      description: 'Permite leer artículos',
+    },
+  });
+
+  const editArticlePermission = await prisma.permission.upsert({
+    where: { action_subject: { action: 'edit', subject: 'Article' } },
+    update: {},
+    create: {
+      action: 'edit',
+      subject: 'Article',
+      description: 'Permite editar artículos',
+    },
+  });
+
+  const deleteArticlePermission = await prisma.permission.upsert({
+    where: { action_subject: { action: 'delete', subject: 'Article' } },
+    update: {},
+    create: {
+      action: 'delete',
+      subject: 'Article',
+      description: 'Permite eliminar artículos',
+    },
+  });
+
+  console.log('Permisos de artículos creados/actualizados:', {
+    createArticlePermission,
+    readArticlePermission,
+    editArticlePermission,
+    deleteArticlePermission,
+  });
+
   // Asignar permisos a roles
-  // ADMIN: Todos los permisos
+  // ADMIN: Todos los permisos (incluyendo los nuevos de artículos)
   await prisma.rolePermission.upsert({
     where: {
       roleId_permissionId: {
@@ -130,9 +178,89 @@ async function main() {
     update: {},
     create: { roleId: adminRole.id, permissionId: manageProductsPermission.id },
   });
+  await prisma.rolePermission.upsert({
+    where: {
+      roleId_permissionId: {
+        roleId: adminRole.id,
+        permissionId: createArticlePermission.id,
+      },
+    },
+    update: {},
+    create: { roleId: adminRole.id, permissionId: createArticlePermission.id },
+  });
+  await prisma.rolePermission.upsert({
+    where: {
+      roleId_permissionId: {
+        roleId: adminRole.id,
+        permissionId: readArticlePermission.id,
+      },
+    },
+    update: {},
+    create: { roleId: adminRole.id, permissionId: readArticlePermission.id },
+  });
+  await prisma.rolePermission.upsert({
+    where: {
+      roleId_permissionId: {
+        roleId: adminRole.id,
+        permissionId: editArticlePermission.id,
+      },
+    },
+    update: {},
+    create: { roleId: adminRole.id, permissionId: editArticlePermission.id },
+  });
+  await prisma.rolePermission.upsert({
+    where: {
+      roleId_permissionId: {
+        roleId: adminRole.id,
+        permissionId: deleteArticlePermission.id,
+      },
+    },
+    update: {},
+    create: { roleId: adminRole.id, permissionId: deleteArticlePermission.id },
+  });
+  await prisma.rolePermission.upsert({
+    where: {
+      roleId_permissionId: {
+        roleId: adminRole.id,
+        permissionId: createArticlePermission.id,
+      },
+    },
+    update: {},
+    create: { roleId: adminRole.id, permissionId: createArticlePermission.id },
+  });
+  await prisma.rolePermission.upsert({
+    where: {
+      roleId_permissionId: {
+        roleId: adminRole.id,
+        permissionId: readArticlePermission.id,
+      },
+    },
+    update: {},
+    create: { roleId: adminRole.id, permissionId: readArticlePermission.id },
+  });
+  await prisma.rolePermission.upsert({
+    where: {
+      roleId_permissionId: {
+        roleId: adminRole.id,
+        permissionId: editArticlePermission.id,
+      },
+    },
+    update: {},
+    create: { roleId: adminRole.id, permissionId: editArticlePermission.id },
+  });
+  await prisma.rolePermission.upsert({
+    where: {
+      roleId_permissionId: {
+        roleId: adminRole.id,
+        permissionId: deleteArticlePermission.id,
+      },
+    },
+    update: {},
+    create: { roleId: adminRole.id, permissionId: deleteArticlePermission.id },
+  });
   console.log('Permisos asignados al rol ADMIN.');
 
-  // EDITOR: Leer usuarios, gestionar productos
+  // EDITOR: Leer usuarios, gestionar productos, y gestionar artículos
   await prisma.rolePermission.upsert({
     where: {
       roleId_permissionId: {
@@ -155,6 +283,36 @@ async function main() {
       roleId: editorRole.id,
       permissionId: manageProductsPermission.id,
     },
+  });
+  await prisma.rolePermission.upsert({
+    where: {
+      roleId_permissionId: {
+        roleId: editorRole.id,
+        permissionId: createArticlePermission.id,
+      },
+    },
+    update: {},
+    create: { roleId: editorRole.id, permissionId: createArticlePermission.id },
+  });
+  await prisma.rolePermission.upsert({
+    where: {
+      roleId_permissionId: {
+        roleId: editorRole.id,
+        permissionId: readArticlePermission.id,
+      },
+    },
+    update: {},
+    create: { roleId: editorRole.id, permissionId: readArticlePermission.id },
+  });
+  await prisma.rolePermission.upsert({
+    where: {
+      roleId_permissionId: {
+        roleId: editorRole.id,
+        permissionId: editArticlePermission.id,
+      },
+    },
+    update: {},
+    create: { roleId: editorRole.id, permissionId: editArticlePermission.id },
   });
   console.log('Permisos asignados al rol EDITOR.');
 

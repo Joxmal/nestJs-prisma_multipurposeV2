@@ -97,7 +97,7 @@ export class AuthController {
   })
   async assignRole(
     @Body() assignRoleDto: AssignRoleDto,
-    adminUser: JwtPayload,
+    @GetUser() adminUser: JwtPayload,
   ): Promise<void> {
     await this.authService.assignRoleToUser(
       assignRoleDto.userId,
@@ -127,7 +127,7 @@ export class AuthController {
   @ApiResponse({ status: 404, description: 'Usuario o rol no encontrado.' })
   async removeRole(
     @Body() assignRoleDto: AssignRoleDto,
-    adminUser: JwtPayload,
+    @GetUser() adminUser: JwtPayload,
   ): Promise<void> {
     await this.authService.removeRoleFromUser(
       assignRoleDto.userId,

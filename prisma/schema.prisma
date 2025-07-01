@@ -22,6 +22,23 @@ model Company {
 
   // EJEMPLO: Una compañía tiene muchos productos
   // products  Product[]
+  Article Article[]
+}
+
+// --- NUEVO MODELO PARA ARTÍCULOS (MULTI-TENANCY) ---
+
+model Article {
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relación con Compañía: Cada artículo PERTENECE a una compañía
+  companyId Int
+  company   Company @relation(fields: [companyId], references: [id])
+
+  @@unique([companyId, title]) // Un artículo con el mismo título dentro de la misma compañía
 }
 
 // --- MODELOS PRINCIPALES (ACTUALIZADOS) ---
