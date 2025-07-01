@@ -61,6 +61,26 @@ async function main() {
     },
   });
 
+  const editUserPermission = await prisma.permission.upsert({
+    where: { action_subject: { action: 'edit', subject: 'User' } },
+    update: {},
+    create: {
+      action: 'edit',
+      subject: 'User',
+      description: 'Permite editar User',
+    },
+  });
+
+  const deleteUserPermission = await prisma.permission.upsert({
+    where: { action_subject: { action: 'delete', subject: 'User' } },
+    update: {},
+    create: {
+      action: 'delete',
+      subject: 'User',
+      description: 'Permite eliminar User',
+    },
+  });
+
   const readProductsPermission = await prisma.permission.upsert({
     where: { action_subject: { action: 'read', subject: 'Product' } },
     update: {},
@@ -84,6 +104,8 @@ async function main() {
   console.log('Permisos creados/actualizados:', {
     readUsersPermission,
     manageUsersPermission,
+    editUserPermission,
+    deleteUserPermission,
     readProductsPermission,
     manageProductsPermission,
   });
@@ -148,6 +170,7 @@ async function main() {
     update: {},
     create: { roleId: adminRole.id, permissionId: readUsersPermission.id },
   });
+
   await prisma.rolePermission.upsert({
     where: {
       roleId_permissionId: {
@@ -158,6 +181,29 @@ async function main() {
     update: {},
     create: { roleId: adminRole.id, permissionId: manageUsersPermission.id },
   });
+
+  await prisma.rolePermission.upsert({
+    where: {
+      roleId_permissionId: {
+        roleId: adminRole.id,
+        permissionId: editUserPermission.id,
+      },
+    },
+    update: {},
+    create: { roleId: adminRole.id, permissionId: editUserPermission.id },
+  });
+
+  await prisma.rolePermission.upsert({
+    where: {
+      roleId_permissionId: {
+        roleId: adminRole.id,
+        permissionId: deleteUserPermission.id,
+      },
+    },
+    update: {},
+    create: { roleId: adminRole.id, permissionId: deleteUserPermission.id },
+  });
+
   await prisma.rolePermission.upsert({
     where: {
       roleId_permissionId: {
@@ -168,6 +214,7 @@ async function main() {
     update: {},
     create: { roleId: adminRole.id, permissionId: readProductsPermission.id },
   });
+
   await prisma.rolePermission.upsert({
     where: {
       roleId_permissionId: {

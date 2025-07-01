@@ -42,6 +42,11 @@ const userWithRolesAndPermissions = Prisma.validator<Prisma.UserDefaultArgs>()({
         },
       },
     },
+    UserPermission: {
+      include: {
+        permission: true,
+      },
+    },
   },
 });
 
@@ -131,13 +136,16 @@ export class AuthService {
     ); // Casteamos a Role
 
     const permissions = [
-      ...new Set(
-        user.roles.flatMap((userRole) =>
+      ...new Set([
+        ...user.roles.flatMap((userRole) =>
           userRole.role.permissions.map(
             (p) => `${p.permission.action}:${p.permission.subject}`,
           ),
         ),
-      ),
+        ...user.UserPermission.map(
+          (up) => `${up.permission.action}:${up.permission.subject}`,
+        ),
+      ]),
     ];
     // --- Fin de las líneas seguras ---
 
@@ -236,6 +244,96 @@ export class AuthService {
         userId_roleId: {
           userId,
           roleId,
+        },
+      },
+    });
+  }
+
+  async assignPermissionToUser(
+    userId: number,
+    permissionId: number,
+    adminUser: JwtPayload,
+  ): Promise<void> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId, companyId: adminUser.companyId },
+    });
+    if (!user) {
+      throw new NotFoundException(`Usuario con ID ${userId} no encontrado.`);
+    }
+
+    const permission = await this.prisma.permission.findUnique({
+      where: { id: permissionId },
+    });
+    if (!permission) {
+      throw new NotFoundException(
+        `Permiso con ID ${permissionId} no encontrado.`,
+      );
+    }
+
+    const existingUserPermission = await this.prisma.userPermission.findUnique({
+      where: {
+        userId_permissionId: {
+          userId,
+          permissionId,
+        },
+      },
+    });
+
+    if (existingUserPermission) {
+      throw new ConflictException(
+        `El usuario con ID ${userId} ya tiene el permiso con ID ${permissionId}.`,
+      );
+    }
+
+    await this.prisma.userPermission.create({
+      data: {
+        userId,
+        permissionId,
+      },
+    });
+  }
+
+  async removePermissionFromUser(
+    userId: number,
+    permissionId: number,
+    adminUser: JwtPayload,
+  ): Promise<void> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId, companyId: adminUser.companyId },
+    });
+    if (!user) {
+      throw new NotFoundException(`Usuario con ID ${userId} no encontrado.`);
+    }
+
+    const permission = await this.prisma.permission.findUnique({
+      where: { id: permissionId },
+    });
+    if (!permission) {
+      throw new NotFoundException(
+        `Permiso con ID ${permissionId} no encontrado.`,
+      );
+    }
+
+    const existingUserPermission = await this.prisma.userPermission.findUnique({
+      where: {
+        userId_permissionId: {
+          userId,
+          permissionId,
+        },
+      },
+    });
+
+    if (!existingUserPermission) {
+      throw new NotFoundException(
+        `El usuario con ID ${userId} no tiene el permiso con ID ${permissionId}.`,
+      );
+    }
+
+    await this.prisma.userPermission.delete({
+      where: {
+        userId_permissionId: {
+          userId,
+          permissionId,
         },
       },
     });

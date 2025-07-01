@@ -12,6 +12,7 @@ import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { AssignRoleDto } from './dto/assign-role.dto'; // Importar el nuevo DTO
+import { AssignPermissionDto } from './dto/assign-permission.dto'; // Importar el nuevo DTO
 import {
   ApiOperation,
   ApiResponse,
@@ -171,5 +172,69 @@ export class AuthController {
       message: 'Usuario registrado exitosamente por el administrador.',
       user: newUser,
     };
+  }
+
+  /**
+   * Endpoint para asignar un permiso a un usuario.
+   * Requiere autenticación y el rol 'ADMIN'.
+   * POST /auth/assign-permission
+   */
+  @Post('assign-permission')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Asignar un permiso a un usuario' })
+  @ApiResponse({ status: 204, description: 'Permiso asignado exitosamente.' })
+  @ApiResponse({ status: 400, description: 'Datos de entrada inválidos.' })
+  @ApiResponse({ status: 401, description: 'No autorizado.' })
+  @ApiResponse({
+    status: 403,
+    description: 'Acceso denegado (rol insuficiente).',
+  })
+  @ApiResponse({ status: 404, description: 'Usuario o permiso no encontrado.' })
+  @ApiResponse({
+    status: 409,
+    description: 'El usuario ya tiene el permiso asignado.',
+  })
+  async assignPermission(
+    @Body() assignPermissionDto: AssignPermissionDto,
+    @GetUser() adminUser: JwtPayload,
+  ): Promise<void> {
+    await this.authService.assignPermissionToUser(
+      assignPermissionDto.userId,
+      assignPermissionDto.permissionId,
+      adminUser,
+    );
+  }
+
+  /**
+   * Endpoint para remover un permiso de un usuario.
+   * Requiere autenticación y el rol 'ADMIN'.
+   * DELETE /auth/remove-permission
+   */
+  @Post('remove-permission')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Remover un permiso de un usuario' })
+  @ApiResponse({ status: 204, description: 'Permiso removido exitosamente.' })
+  @ApiResponse({ status: 400, description: 'Datos de entrada inválidos.' })
+  @ApiResponse({ status: 401, description: 'No autorizado.' })
+  @ApiResponse({
+    status: 403,
+    description: 'Acceso denegado (rol insuficiente).',
+  })
+  @ApiResponse({ status: 404, description: 'Usuario o permiso no encontrado.' })
+  async removePermission(
+    @Body() assignPermissionDto: AssignPermissionDto,
+    @GetUser() adminUser: JwtPayload,
+  ): Promise<void> {
+    await this.authService.removePermissionFromUser(
+      assignPermissionDto.userId,
+      assignPermissionDto.permissionId,
+      adminUser,
+    );
   }
 }

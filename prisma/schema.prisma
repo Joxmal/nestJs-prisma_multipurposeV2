@@ -57,7 +57,8 @@ model User {
   company   Company @relation(fields: [companyId], references: [id])
 
   // Relación con Roles no cambia
-  roles UserRole[]
+  roles          UserRole[]
+  UserPermission UserPermission[]
 
   @@unique([companyId, username])
 }
@@ -72,11 +73,12 @@ model Role {
 }
 
 model Permission {
-  id          Int              @id @default(autoincrement())
-  action      String
-  subject     String
-  description String?
-  roles       RolePermission[]
+  id             Int              @id @default(autoincrement())
+  action         String
+  subject        String
+  description    String?
+  roles          RolePermission[]
+  UserPermission UserPermission[]
 
   @@unique([action, subject]) // Clave única compuesta para evitar duplicados
 }
@@ -100,4 +102,14 @@ model RolePermission {
   permissionId Int
 
   @@id([roleId, permissionId])
+}
+
+model UserPermission {
+  user         User       @relation(fields: [userId], references: [id])
+  userId       Int
+  permission   Permission @relation(fields: [permissionId], references: [id])
+  permissionId Int
+  assignedAt   DateTime   @default(now())
+
+  @@id([userId, permissionId])
 }
