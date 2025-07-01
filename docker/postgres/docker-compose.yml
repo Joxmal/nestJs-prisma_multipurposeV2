@@ -1,0 +1,49 @@
+version: '3.8' # Especificar la versión de compose es una buena práctica
+
+services:
+  db:
+    # 1. Reproducibilidad: Fija la versión de la imagen
+    image: postgres:15-alpine # Usamos alpine para una imagen más ligera
+
+    # 2. Seguridad: Usa variables del archivo .env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      # PGDATA se usa para asegurar que Postgres use el directorio correcto dentro del contenedor
+      PGDATA: /var/lib/postgresql/data/pgdata
+
+    volumes:
+      # Montamos el volumen en el subdirectorio definido por PGDATA
+      - pgDataV2:/var/lib/postgresql/data/pgdata
+
+    ports:
+      # Usamos la variable de entorno para el puerto también
+      - '${DB_PORT}:5432'
+
+    # 3. Robustez: Política de reinicio y chequeo de salud
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+    # Tus optimizaciones de rendimiento (que están muy bien)
+    shm_size: 1gb
+    mem_limit: 1g
+    command: postgres
+      -c shared_buffers=256MB
+      -c work_mem=4MB
+      -c maintenance_work_mem=64MB
+      -c max_connections=40
+      -c effective_cache_size=512MB
+      -c logging_collector=on
+      -c log_destination=stderr
+      -c log_statement=ddl
+
+volumes:
+  pgDataV2:
+    # Es buena práctica definir el volumen como externo o nombrarlo explícitamente
+    name: postgres_data_v2

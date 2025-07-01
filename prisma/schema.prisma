@@ -1,0 +1,86 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- NUEVO MODELO PARA MULTI-TENANCY ---
+
+model Company {
+  id        Int      @id @default(autoincrement())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relación: Una compañía tiene muchos usuarios
+  users User[]
+
+  // EJEMPLO: Una compañía tiene muchos productos
+  // products  Product[]
+}
+
+// --- MODELOS PRINCIPALES (ACTUALIZADOS) ---
+
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String
+  password  String
+  email     String   @unique
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relación con Compañía: Cada usuario PERTENECE a una compañía
+  companyId Int
+  company   Company @relation(fields: [companyId], references: [id])
+
+  // Relación con Roles no cambia
+  roles UserRole[]
+
+  @@unique([companyId, username])
+}
+
+// Los modelos Role y Permission NO cambian. Se definen globalmente.
+model Role {
+  id          Int              @id @default(autoincrement())
+  name        String           @unique // "ADMIN", "EDITOR", "USER"
+  description String?
+  users       UserRole[]
+  permissions RolePermission[]
+}
+
+model Permission {
+  id          Int              @id @default(autoincrement())
+  action      String
+  subject     String
+  description String?
+  roles       RolePermission[]
+
+  @@unique([action, subject]) // Clave única compuesta para evitar duplicados
+}
+
+// --- TABLAS INTERMEDIAS (SIN CAMBIOS) ---
+
+model UserRole {
+  user       User     @relation(fields: [userId], references: [id])
+  userId     Int
+  role       Role     @relation(fields: [roleId], references: [id])
+  roleId     Int
+  assignedAt DateTime @default(now())
+
+  @@id([userId, roleId])
+}
+
+model RolePermission {
+  role         Role       @relation(fields: [roleId], references: [id])
+  roleId       Int
+  permission   Permission @relation(fields: [permissionId], references: [id])
+  permissionId Int
+
+  @@id([roleId, permissionId])
+}
