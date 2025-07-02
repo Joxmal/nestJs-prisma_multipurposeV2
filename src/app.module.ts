@@ -7,6 +7,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { ProfileModule } from './profile/profile.module';
 import { ArticlesModule } from './articles/articles.module'; // Importar ArticlesModule
+import { ImagesModule } from './images/images.module';
 
 @Module({
   imports: [
@@ -20,12 +21,19 @@ import { ArticlesModule } from './articles/articles.module'; // Importar Article
           .valid('development', 'production', 'test')
           .default('development'),
         PORT: Joi.number().default(3000),
+        MINIO_ROOT_USER: Joi.string().required(),
+        MINIO_ROOT_PASSWORD: Joi.string().required(),
+        MINIO_PORT: Joi.number().required(),
+        MINIO_CONSOLE_PORT: Joi.number().required(),
+        MINIO_ENDPOINT: Joi.string().uri().required(),
+        MINIO_BUCKET_NAME: Joi.string().required(),
       }),
     }),
     PrismaModule,
     AuthModule,
     ProfileModule,
     ArticlesModule, // Añadir ArticlesModule
+    ImagesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

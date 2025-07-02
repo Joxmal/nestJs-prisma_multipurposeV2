@@ -23,6 +23,7 @@ model Company {
   // EJEMPLO: Una compañía tiene muchos productos
   // products  Product[]
   Article Article[]
+  Image   Image[]
 }
 
 // --- NUEVO MODELO PARA ARTÍCULOS (MULTI-TENANCY) ---
@@ -59,6 +60,7 @@ model User {
   // Relación con Roles no cambia
   roles          UserRole[]
   UserPermission UserPermission[]
+  Image          Image[]
 
   @@unique([companyId, username])
 }
@@ -112,4 +114,22 @@ model UserPermission {
   assignedAt   DateTime   @default(now())
 
   @@id([userId, permissionId])
+}
+
+model Image {
+  id           Int      @id @default(autoincrement())
+  filename     String   @unique
+  originalName String
+  mimetype     String
+  size         Int
+  url          String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  userId    Int
+  user      User    @relation(fields: [userId], references: [id])
+  companyId Int
+  company   Company @relation(fields: [companyId], references: [id])
+
+  @@unique([companyId, filename])
 }

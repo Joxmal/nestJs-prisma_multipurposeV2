@@ -1,5 +1,3 @@
-version: '3.8' # Especificar la versión de compose es una buena práctica
-
 services:
   db:
     # 1. Reproducibilidad: Fija la versión de la imagen
@@ -43,7 +41,48 @@ services:
       -c log_destination=stderr
       -c log_statement=ddl
 
+  minio:
+    image: 'quay.io/minio/minio:RELEASE.2025-03-12T18-04-18Z'
+    ports:
+      - '${MINIO_PORT}:9000' # Puerto para la API de S3
+      - '${MINIO_CONSOLE_PORT}:9001' # Puerto para la consola web
+    command: server /data --console-address ":9001"
+    environment:
+      # Credenciales de acceso root. La contraseña debe tener al menos 8 caracteres.
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_data:/data
+
+    # --- CORRECCIÓN AQUÍ ---
+    # Le decimos a MinIO que inicie el servidor, dónde guardar los datos (/data)
+    # y en qué dirección exponer la consola web.
+
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:9000/minio/health/live']
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    restart: unless-stopped
+    mem_limit: 1g
+
+  createbuckets:
+    image: quay.io/minio/mc:RELEASE.2025-03-12T17-29-24Z
+    depends_on:
+      - minio
+    restart: on-failure
+    entrypoint: >
+      /bin/sh -c "
+      sleep 5;
+      /usr/bin/mc alias set minio http://minio:9000 minioadmin minioadmin;
+      /usr/bin/mc mb minio/nest-images/some-directory;
+      /usr/bin/mc mb minio/nest-images;
+      exit 0;
+      "
+
 volumes:
   pgDataV2:
     # Es buena práctica definir el volumen como externo o nombrarlo explícitamente
     name: postgres_data_v2
+  minio_data:
+    name: minio_data
