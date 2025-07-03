@@ -21,12 +21,14 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { UploadImageDto } from './dto/upload-image.dto';
+import { GetImagesDto } from './dto/get-images.dto'; // Importar el nuevo DTO
 import { AuthGuard } from '@nestjs/passport';
 import { GetUser } from 'src/auth/decorators/get-user.decorator';
 import { JwtPayload } from 'src/auth/auth.service';
 import { Permissions } from 'src/common/decorators/permissions.decorator';
 import { PermissionsGuard } from 'src/common/guards/permissions.guard';
 import { Response } from 'express';
+import { Query } from '@nestjs/common'; // Importar Query
 
 @ApiTags('images')
 @Controller('images')
@@ -82,6 +84,62 @@ export class ImagesController {
     return this.imagesService.uploadFile(file, user.sub, user.companyId);
   }
 
+  @Get('multiple')
+  @Permissions('read:Image') // Requiere el permiso 'read:Image'
+  @ApiOperation({
+    summary:
+      'Obtener URLs de múltiples imágenes por sus IDs o todas las imágenes',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'URLs de imágenes obtenidas exitosamente.',
+    schema: {
+      example: [
+        {
+          id: 1,
+          filename: 'uuid-imagen1.jpg',
+          originalName: 'imagen1.jpg',
+          mimetype: 'image/jpeg',
+          size: 12345,
+          url: 'http://localhost:9000/nest-images/uuid-imagen1.jpg',
+          userId: 1,
+          companyId: 1,
+          createdAt: '2023-01-01T00:00:00.000Z',
+          updatedAt: '2023-01-01T00:00:00.000Z',
+          signedUrl:
+            'http://public-minio:9000/nest-images/uuid-imagen1.jpg?X-Amz-Signature=...',
+        },
+        {
+          id: 2,
+          filename: 'uuid-imagen2.png',
+          originalName: 'imagen2.png',
+          mimetype: 'image/png',
+          size: 67890,
+          url: 'http://localhost:9000/nest-images/uuid-imagen2.png',
+          userId: 1,
+          companyId: 1,
+          createdAt: '2023-01-01T00:00:00.000Z',
+          updatedAt: '2023-01-01T00:00:00.000Z',
+          signedUrl:
+            'http://public-minio:9000/nest-images/uuid-imagen2.png?X-Amz-Signature=...',
+        },
+      ],
+    },
+  })
+  @ApiResponse({ status: 401, description: 'No autorizado.' })
+  @ApiResponse({
+    status: 403,
+    description: 'Acceso denegado (permisos insuficientes).',
+  })
+  @ApiResponse({ status: 500, description: 'Error interno del servidor.' })
+  async getMultipleImages(
+    @Query() query: GetImagesDto,
+    @GetUser() user: JwtPayload,
+  ) {
+    const imageIds = query.ids;
+    return this.imagesService.getMultipleFileUrls(imageIds, user.companyId);
+  }
+
   @Get(':id')
   @Permissions('read:Image') // Requiere el permiso 'read:Image'
   @ApiOperation({ summary: 'Obtener la URL de una imagen por su ID' })
@@ -114,7 +172,6 @@ export class ImagesController {
       imageId,
       user.companyId,
     );
-    console.log(imageUrl);
     // Redirigir al cliente a la URL de MinIO
     return res.redirect(imageUrl);
   }

@@ -9,6 +9,7 @@ import {
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { v4 as uuid } from 'uuid';
 import { ConfigService } from '@nestjs/config';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class ImagesService {
@@ -92,8 +93,6 @@ export class ImagesService {
       where: { id: imageId, companyId: companyId },
     });
 
-    console.log('image', image);
-
     if (!image) {
       throw new InternalServerErrorException('Imagen no encontrada.');
     }
@@ -115,5 +114,45 @@ export class ImagesService {
         'Error al obtener la URL de la imagen. Inténtalo de nuevo más tarde.',
       );
     }
+  }
+
+  async getMultipleFileUrls(imageIds: number[] | undefined, companyId: number) {
+    const whereClause: Prisma.ImageWhereInput = { companyId: companyId };
+    if (imageIds && imageIds.length > 0) {
+      whereClause.id = { in: imageIds };
+    }
+
+    const images = await this.prisma.image.findMany({
+      where: whereClause,
+    });
+
+    if (!images || images.length === 0) {
+      return []; // O lanzar una excepción si se prefiere
+    }
+
+    const imagesWithSignedUrls = await Promise.all(
+      images.map(async (image) => {
+        const command = new GetObjectCommand({
+          Bucket: this.bucketName,
+          Key: image.filename,
+        });
+
+        try {
+          const signedUrl = await getSignedUrl(this.s3Client_public, command, {
+            expiresIn: 3600, // URL válida por 1 hora (en segundos)
+          });
+          return { ...image, signedUrl };
+        } catch (error) {
+          console.error(
+            `Error al generar URL pre-firmada para ${image.filename}:`,
+            error,
+          );
+          // Si falla una URL, se puede devolver la imagen sin URL o lanzar un error
+          return { ...image, signedUrl: null };
+        }
+      }),
+    );
+
+    return imagesWithSignedUrls;
   }
 }
