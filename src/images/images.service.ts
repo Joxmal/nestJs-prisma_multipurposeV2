@@ -12,7 +12,8 @@ import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class ImagesService {
-  private s3Client: S3Client;
+  private s3Client_private: S3Client;
+  private s3Client_public: S3Client;
   private readonly bucketName: string;
 
   constructor(
@@ -20,9 +21,20 @@ export class ImagesService {
     private configService: ConfigService,
   ) {
     this.bucketName = this.configService.get<string>('MINIO_BUCKET_NAME')!;
-    this.s3Client = new S3Client({
+    this.s3Client_private = new S3Client({
       region: 'us-east-1', // MinIO no usa la región, pero es requerida por el SDK
       endpoint: this.configService.get<string>('MINIO_PRIVATE_ENDPOINT')!,
+      credentials: {
+        accessKeyId: this.configService.get<string>('MINIO_ROOT_USER')!,
+        secretAccessKey: this.configService.get<string>('MINIO_ROOT_PASSWORD')!,
+      },
+      forcePathStyle: true, // Importante para MinIO
+    });
+
+    // Crear una nueva instancia de S3Client para generar la URL pre-firmada con el endpoint público
+    this.s3Client_public = new S3Client({
+      region: 'us-east-1', // MinIO no usa la región, pero es requerida por el SDK
+      endpoint: this.configService.get<string>('MINIO_PUBLIC_ENDPOINT')!,
       credentials: {
         accessKeyId: this.configService.get<string>('MINIO_ROOT_USER')!,
         secretAccessKey: this.configService.get<string>('MINIO_ROOT_PASSWORD')!,
@@ -41,7 +53,7 @@ export class ImagesService {
     const fileBuffer = file.buffer;
 
     try {
-      await this.s3Client.send(
+      await this.s3Client_private.send(
         new PutObjectCommand({
           Bucket: this.bucketName,
           Key: filename,
@@ -80,6 +92,8 @@ export class ImagesService {
       where: { id: imageId, companyId: companyId },
     });
 
+    console.log('image', image);
+
     if (!image) {
       throw new InternalServerErrorException('Imagen no encontrada.');
     }
@@ -91,7 +105,7 @@ export class ImagesService {
     });
 
     try {
-      const signedUrl = await getSignedUrl(this.s3Client, command, {
+      const signedUrl = await getSignedUrl(this.s3Client_public, command, {
         expiresIn: 3600, // URL válida por 1 hora (en segundos)
       });
       return signedUrl;
