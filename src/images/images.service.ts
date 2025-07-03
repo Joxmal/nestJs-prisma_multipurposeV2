@@ -22,7 +22,7 @@ export class ImagesService {
     this.bucketName = this.configService.get<string>('MINIO_BUCKET_NAME')!;
     this.s3Client = new S3Client({
       region: 'us-east-1', // MinIO no usa la región, pero es requerida por el SDK
-      endpoint: this.configService.get<string>('MINIO_ENDPOINT')!,
+      endpoint: this.configService.get<string>('MINIO_PRIVATE_ENDPOINT')!,
       credentials: {
         accessKeyId: this.configService.get<string>('MINIO_ROOT_USER')!,
         secretAccessKey: this.configService.get<string>('MINIO_ROOT_PASSWORD')!,
@@ -52,7 +52,7 @@ export class ImagesService {
 
       // La URL directa ya no es tan relevante si vamos a usar URLs pre-firmadas para el acceso
       // Sin embargo, la guardamos para referencia o si se cambia la política del bucket
-      const imageUrl = `${this.configService.get<string>('MINIO_ENDPOINT')!}/${this.bucketName}/${filename}`;
+      const imageUrl = `${this.configService.get<string>('MINIO_PUBLIC_ENDPOINT')!}/${this.bucketName}/${filename}`;
 
       const image = await this.prisma.image.create({
         data: {
