@@ -4,8 +4,8 @@
 /build
 
 # Logs
-logs/*
-*.log
+logs/app.log*
+logs/error.log*
 npm-debug.log*
 pnpm-debug.log*
 yarn-debug.log*
