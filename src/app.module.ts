@@ -66,7 +66,7 @@ import { ScheduleModule } from '@nestjs/schedule';
                       target: 'pino-roll',
                       options: {
                         file: join(process.cwd(), 'logs', 'app.log'),
-                        frequency: 2000, // CORREGIDO: Usar 'daily'
+                        frequency: 'daily', // CORREGIDO: Usar 'daily'
                         size: '20M',
                         limit: {
                           count: 30,
@@ -81,7 +81,7 @@ import { ScheduleModule } from '@nestjs/schedule';
                       options: {
                         // Nombre de archivo diferente para los errores
                         file: join(process.cwd(), 'logs', 'error.log'),
-                        frequency: 2000,
+                        frequency: 'daily',
                         size: '10M', // Puede que los errores ocupen menos
                         limit: {
                           count: 30,

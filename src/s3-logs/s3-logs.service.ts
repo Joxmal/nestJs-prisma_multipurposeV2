@@ -29,7 +29,7 @@ export class S3LogsService {
     this.bucketName = 'logs'; // El nombre del bucket es "logs" como se especificó
   }
 
-  @Cron(CronExpression.EVERY_5_SECONDS) // Se ejecuta todos los días a medianoche
+  @Cron(CronExpression.EVERY_30_MINUTES) // Se ejecuta todos los días a medianoche
   async handleCron() {
     this.logger.log('Iniciando la subida de logs a S3 (MinIO)...');
     try {
