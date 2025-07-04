@@ -12,7 +12,8 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { LoggerModule } from 'nestjs-pino';
 import { join } from 'path';
-
+import { S3LogsModule } from './s3-logs/s3-logs.module';
+import { ScheduleModule } from '@nestjs/schedule';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -34,6 +35,7 @@ import { join } from 'path';
         MINIO_BUCKET_NAME: Joi.string().required(),
       }),
     }),
+    ScheduleModule.forRoot(),
     PrismaModule,
     LoggerModule.forRootAsync({
       imports: [ConfigModule],
@@ -64,7 +66,7 @@ import { join } from 'path';
                       target: 'pino-roll',
                       options: {
                         file: join(process.cwd(), 'logs', 'app.log'),
-                        frequency: 'daily', // CORREGIDO: Usar 'daily'
+                        frequency: 2000, // CORREGIDO: Usar 'daily'
                         size: '20M',
                         limit: {
                           count: 30,
@@ -79,7 +81,7 @@ import { join } from 'path';
                       options: {
                         // Nombre de archivo diferente para los errores
                         file: join(process.cwd(), 'logs', 'error.log'),
-                        frequency: 'daily',
+                        frequency: 2000,
                         size: '10M', // Puede que los errores ocupen menos
                         limit: {
                           count: 30,
@@ -113,6 +115,7 @@ import { join } from 'path';
         limit: 100,
       },
     ]),
+    S3LogsModule,
   ],
   controllers: [AppController],
   providers: [
