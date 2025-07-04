@@ -8,6 +8,8 @@ import { AuthModule } from './auth/auth.module';
 import { ProfileModule } from './profile/profile.module';
 import { ArticlesModule } from './articles/articles.module'; // Importar ArticlesModule
 import { ImagesModule } from './images/images.module';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
@@ -35,8 +37,31 @@ import { ImagesModule } from './images/images.module';
     ProfileModule,
     ArticlesModule, // Añadir ArticlesModule
     ImagesModule,
+    ThrottlerModule.forRoot([
+      {
+        name: 'short',
+        ttl: 1000,
+        limit: 3,
+      },
+      {
+        name: 'default',
+        ttl: 10000,
+        limit: 25,
+      },
+      {
+        name: 'long',
+        ttl: 60000,
+        limit: 100,
+      },
+    ]),
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {}
