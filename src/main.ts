@@ -2,8 +2,12 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common'; // 👈 1. Importa el ValidationPipe
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { Logger } from 'nestjs-pino';
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+
+  // Usa Pino como logger global
+  app.useLogger(app.get(Logger));
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -49,9 +53,13 @@ async function bootstrap() {
   }
 
   await app.listen(process.env.PORT ?? 3000);
-  console.log(`Application is running on: ${await app.getUrl()}`);
+  const url = await app.getUrl();
+  app.get(Logger).log(`Application is running on: ${url}`);
+
   if (process.env.NODE_ENV !== 'production') {
-    console.log(`Swagger UI available at: ${await app.getUrl()}/api-docs`);
+    app
+      .get(Logger)
+      .log(`Swagger UI available at: ${await app.getUrl()}/api-docs`);
   }
 }
 void bootstrap();

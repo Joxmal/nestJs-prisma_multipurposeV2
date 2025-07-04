@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import * as Joi from 'joi';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -10,6 +10,8 @@ import { ArticlesModule } from './articles/articles.module'; // Importar Article
 import { ImagesModule } from './images/images.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
+import { LoggerModule } from 'nestjs-pino';
+import { join } from 'path';
 
 @Module({
   imports: [
@@ -33,6 +35,63 @@ import { APP_GUARD } from '@nestjs/core';
       }),
     }),
     PrismaModule,
+    LoggerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        pinoHttp: {
+          level:
+            configService.get<string>('NODE_ENV') === 'production'
+              ? 'info'
+              : 'debug',
+
+          transport:
+            configService.get<string>('NODE_ENV') !== 'production'
+              ? {
+                  target: 'pino-pretty',
+                  options: {
+                    colorize: true, // Colorea la salida
+                    translateTime: 'SYS:standard', // Muestra la hora en formato legible
+                    singleLine: true, // Muestra cada log en una sola línea (opcional)
+                    ignore: 'pid,hostname,res,req.headers', // Oculta campos menos útiles para desarrollo
+                  },
+                }
+              : {
+                  targets: [
+                    // --- Target 1: Archivo para logs generales (info, warn, error) ---
+                    {
+                      level: 'info', // Nivel mínimo para este archivo
+                      target: 'pino-roll',
+                      options: {
+                        file: join(process.cwd(), 'logs', 'app.log'),
+                        frequency: 'daily', // CORREGIDO: Usar 'daily'
+                        size: '20M',
+                        limit: {
+                          count: 30,
+                        }, // Reducido para no guardar 100 archivos
+                        dateFormat: 'yyyy-MM-dd', // CORREGIDO: formato de fecha
+                      },
+                    },
+                    // --- Target 2: Archivo exclusivo para errores ---
+                    {
+                      level: 'error', // Solo logs de nivel 'error' y superiores
+                      target: 'pino-roll',
+                      options: {
+                        // Nombre de archivo diferente para los errores
+                        file: join(process.cwd(), 'logs', 'error.log'),
+                        frequency: 'daily',
+                        size: '10M', // Puede que los errores ocupen menos
+                        limit: {
+                          count: 30,
+                        }, // Quizás quieras retener errores por más tiempo
+                        dateFormat: 'yyyy-MM-dd',
+                      },
+                    },
+                  ],
+                },
+        },
+      }),
+    }),
     AuthModule,
     ProfileModule,
     ArticlesModule, // Añadir ArticlesModule
