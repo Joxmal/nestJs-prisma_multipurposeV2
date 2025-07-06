@@ -47,6 +47,11 @@ import { ScheduleModule } from '@nestjs/schedule';
               ? 'info'
               : 'debug',
 
+          redact: {
+            paths: ['req.headers.authorization', 'req.headers.cookie'],
+            censor: '*** [REDACTED] ***', // El texto que lo reemplazará
+          },
+
           transport:
             configService.get<string>('NODE_ENV') !== 'production'
               ? {

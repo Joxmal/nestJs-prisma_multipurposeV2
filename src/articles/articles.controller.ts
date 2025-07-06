@@ -24,6 +24,8 @@ import { Permissions } from 'src/common/decorators/permissions.decorator';
 import { PermissionsGuard } from 'src/common/guards/permissions.guard';
 import { CreateArticleDto } from './dto/create-article.dto';
 import { UpdateArticleDto } from './dto/update-article.dto';
+import { GetLogger } from 'src/common/decorators/get-logger.decorator';
+import { PinoLogger } from 'nestjs-pino';
 
 @ApiTags('articles')
 @Controller('articles')
@@ -54,7 +56,16 @@ export class ArticlesController {
   @ApiResponse({ status: 200, description: 'Lista de artículos.' })
   @ApiResponse({ status: 401, description: 'No autorizado.' })
   @Permissions('read:Article') // Requiere el permiso 'read:Article'
-  async findAll(@GetUser() user: JwtPayload) {
+  async findAll(@GetUser() user: JwtPayload, @GetLogger() log: PinoLogger) {
+    log.info(
+      {
+        context: {
+          userId: user.sub,
+          companyId: user.companyId,
+        },
+      },
+      `El usuario está obteniendo todos los artículos de su empresa`,
+    );
     return this.articlesService.findAll(user.companyId);
   }
 
